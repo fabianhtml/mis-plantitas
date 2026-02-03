@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Plantitas - Calendario de Riego</title>
+    <meta name="description" content="Calendario de riego para mis plantitas. Jade y Sansevieria.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --jade: #2D5A45;
+            --jade-light: #4A7C59;
+            --sansevieria: #8B6914;
+            --sansevieria-light: #C4A052;
+            --cream: #FDF8F0;
+            --earth: #3D2914;
+            --earth-light: #5C4033;
+            --sage: #9CAF88;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--earth);
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background:
+                radial-gradient(ellipse at 10% 20%, rgba(156, 175, 136, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 80%, rgba(196, 160, 82, 0.2) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(45, 90, 69, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+        header { text-align: center; padding: 1.5rem 0; animation: fadeInDown 0.8s ease-out; }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            color: var(--jade);
+            margin-bottom: 0.5rem;
+        }
+        h1 span { display: inline-block; animation: wave 2s ease-in-out infinite; }
+        @keyframes wave {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(10deg); }
+            75% { transform: rotate(-10deg); }
+        }
+        .subtitle { font-size: 1rem; color: var(--earth-light); opacity: 0.95; }
+        .plants-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin: 1.2rem 0;
+        }
+        .plant-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(61, 41, 20, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+        .plant-card:nth-child(1) { animation-delay: 0.2s; }
+        .plant-card:nth-child(2) { animation-delay: 0.4s; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .plant-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(61, 41, 20, 0.15); }
+        .plant-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 5px;
+        }
+        .plant-card.jade::before { background: linear-gradient(90deg, var(--jade), var(--jade-light)); }
+        .plant-card.sansevieria::before { background: linear-gradient(90deg, var(--sansevieria), var(--sansevieria-light)); }
+        .plant-icon { font-size: 3rem; margin-bottom: 0.8rem; display: block; }
+        .plant-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+        .plant-card.jade .plant-name { color: var(--jade); }
+        .plant-card.sansevieria .plant-name { color: var(--sansevieria); }
+        .plant-scientific {
+            font-style: italic;
+            color: var(--earth-light);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+        .water-info {
+            background: var(--cream);
+            border-radius: 10px;
+            padding: 0.8rem;
+            margin: 0.8rem 0;
+        }
+        .water-info p {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.2rem 0;
+            font-size: 0.9rem;
+        }
+        .next-water {
+            font-weight: 600;
+            padding: 0.7rem;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 0.8rem;
+            font-size: 0.9rem;
+        }
+        .plant-card.jade .next-water {
+            background: linear-gradient(135deg, var(--jade), var(--jade-light));
+            color: white;
+        }
+        .plant-card.sansevieria .next-water {
+            background: linear-gradient(135deg, var(--sansevieria), var(--sansevieria-light));
+            color: white;
+        }
+        .last-water-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.8rem 0;
+            font-size: 0.9rem;
+        }
+        .last-water-row label {
+            color: var(--earth-light);
+        }
+        .last-water-row .date-input {
+            flex: 1;
+            max-width: 160px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+            margin: 1.2rem 0;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 14px;
+            padding: 1.2rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(61, 41, 20, 0.06);
+        }
+        .stat-number {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--jade);
+        }
+        .stat-label { font-size: 0.8rem; color: var(--earth-light); margin-top: 0.2rem; opacity: 0.95; }
+        .calendar-section { margin-top: 2rem; }
+        .today-section { margin: 1rem 0 1.5rem; }
+        .today-card {
+            background: white;
+            border-radius: 18px;
+            padding: 1.2rem;
+            box-shadow: 0 6px 20px rgba(61, 41, 20, 0.08);
+            text-align: center;
+        }
+        .today-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            color: var(--earth);
+            margin-bottom: 0.3rem;
+        }
+        .today-message {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--jade);
+            margin-bottom: 0.3rem;
+        }
+        .today-message.no { color: var(--earth-light); }
+        .today-sub {
+            font-size: 0.9rem;
+            color: var(--earth-light);
+        }
+        .date-input {
+            padding: 0.55rem 0.7rem;
+            border-radius: 10px;
+            border: 1px solid rgba(61, 41, 20, 0.12);
+            font-size: 0.9rem;
+            background: white;
+        }
+        .date-input:focus-visible {
+            outline: 2px solid rgba(45, 90, 69, 0.35);
+            outline-offset: 2px;
+        }
+        .calendar-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            text-align: center;
+        }
+        .today-badge {
+            background: #E74C3C;
+            color: white;
+            padding: 0.4rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            box-shadow: 0 6px 16px rgba(231, 76, 60, 0.25);
+            cursor: pointer;
+            user-select: none;
+        }
+        .calendar-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            color: var(--earth);
+        }
+        .year-nav { display: flex; align-items: center; gap: 0.8rem; }
+        .year-nav button {
+            background: white;
+            border: 2px solid var(--sage);
+            color: var(--earth);
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .year-nav button:hover {
+            background: var(--jade);
+            border-color: var(--jade);
+            color: white;
+        }
+        .year-display {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            min-width: 70px;
+            text-align: center;
+        }
+        .legend {
+            display: flex;
+            gap: 1.2rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            padding: 0.8rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(61, 41, 20, 0.05);
+        }
+        .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
+        .legend-dot { width: 14px; height: 14px; border-radius: 50%; }
+        .legend-dot.jade { background: var(--jade); }
+        .legend-dot.sansevieria { background: var(--sansevieria); }
+        .legend-dot.both { background: linear-gradient(135deg, var(--jade) 50%, var(--sansevieria) 50%); }
+        .legend-dot.today { background: #E74C3C; }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        .month-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(61, 41, 20, 0.06);
+            transition: transform 0.3s ease;
+        }
+        .month-card:hover { transform: scale(1.02); }
+        .month-header {
+            background: linear-gradient(135deg, var(--earth), var(--earth-light));
+            color: white;
+            padding: 0.8rem;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .month-body { padding: 0.8rem; }
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--earth-light);
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            opacity: 0.95;
+        }
+        .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            border-radius: 50%;
+            position: relative;
+            transition: all 0.2s ease;
+            cursor: default;
+        }
+        .day.empty { visibility: hidden; }
+        .day.water-jade { background: var(--jade); color: white; font-weight: 600; }
+        .day.water-sansevieria { background: var(--sansevieria); color: white; font-weight: 600; }
+        .day.water-both { background: linear-gradient(135deg, var(--jade) 50%, var(--sansevieria) 50%); color: white; font-weight: 600; }
+        .day.today { box-shadow: 0 0 0 3px #E74C3C, 0 6px 12px rgba(231, 76, 60, 0.25); }
+        .day.past { opacity: 0.4; }
+        .day:not(.empty):hover { box-shadow: 0 0 0 2px rgba(45, 90, 69, 0.25); z-index: 10; }
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--earth-light);
+            font-size: 0.85rem;
+        }
+        footer span { color: #E74C3C; }
+        .tooltip {
+            position: fixed;
+            background: var(--earth);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            white-space: nowrap;
+        }
+        .tooltip.show { opacity: 1; }
+        @media (min-width: 700px) {
+            .container { padding: 1.5rem; }
+            header { padding: 2rem 0; }
+            .plants-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
+            .stats { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+            .calendar-header { justify-content: space-between; text-align: left; gap: 1rem; }
+            .calendar-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+        }
+    </style>
+</head>
+<body>
+    <div class="tooltip" id="tooltip"></div>
+    <div class="container">
+        <header>
+            <h1><span>🌱</span> Mis Plantitas</h1>
+            <p class="subtitle">Calendario de riego</p>
+        </header>
+        <section class="today-section">
+            <div class="today-card">
+                <div>
+                    <div class="today-title">¿Toca regar hoy?</div>
+                    <div class="today-message" id="today-message">Cargando...</div>
+                    <div class="today-sub" id="today-sub">Calculando próximo riego...</div>
+                </div>
+            </div>
+        </section>
+        <div class="plants-grid">
+            <div class="plant-card jade">
+                <span class="plant-icon">🪴</span>
+                <h2 class="plant-name">Jade</h2>
+                <p class="plant-scientific">Crassula ovata</p>
+                <div class="water-info">
+                    <p>💧 <strong>100 ml</strong> cada <strong>2 semanas</strong></p>
+                </div>
+                <div class="last-water-row">
+                    <label for="last-jade-input">Último riego:</label>
+                    <input class="date-input" id="last-jade-input" type="date">
+                </div>
+                <div class="next-water" id="next-jade">Cargando...</div>
+            </div>
+            <div class="plant-card sansevieria">
+                <span class="plant-icon">🌿</span>
+                <h2 class="plant-name">Sansevieria</h2>
+                <p class="plant-scientific">Sansevieria trifasciata</p>
+                <div class="water-info">
+                    <p>💧 <strong>100 ml</strong> cada <strong>mes</strong></p>
+                </div>
+                <div class="last-water-row">
+                    <label for="last-sansev-input">Último riego:</label>
+                    <input class="date-input" id="last-sansev-input" type="date">
+                </div>
+                <div class="next-water" id="next-sansevieria">Cargando...</div>
+            </div>
+        </div>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-jade">0</div>
+                <div class="stat-label">Riegos Jade</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-sansevieria">0</div>
+                <div class="stat-label">Riegos Sansevieria</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-water">0</div>
+                <div class="stat-label">Litros al año</div>
+            </div>
+        </div>
+        <section class="calendar-section">
+            <div class="calendar-header">
+                <h2 class="calendar-title">📆 Calendario de Riego</h2>
+                <span class="today-badge" id="today-badge">Hoy</span>
+                <div class="year-nav">
+                    <button onclick="changeYear(-1)" aria-label="Año anterior">‹</button>
+                    <span class="year-display" id="year-display">2025</span>
+                    <button onclick="changeYear(1)" aria-label="Año siguiente">›</button>
+                </div>
+            </div>
+            <div class="legend">
+                <div class="legend-item"><div class="legend-dot jade"></div><span>Jade</span></div>
+                <div class="legend-item"><div class="legend-dot sansevieria"></div><span>Sansevieria</span></div>
+                <div class="legend-item"><div class="legend-dot both"></div><span>Ambas</span></div>
+                <div class="legend-item"><div class="legend-dot today"></div><span>Hoy</span></div>
+            </div>
+            <div class="calendar-grid" id="calendar-grid"></div>
+        </section>
+        <footer>Hecho con <span>♥</span> para mis plantitas</footer>
+    </div>
+    <script>
+        // Configuración simple: fechas de último riego conocidas
+        // Jade: cada 2 semanas (14 días)
+        // Sansevieria: 1 vez al mes
+        const JADE_INTERVAL = 14;
+        const SANSEVIERIA_INTERVAL_MONTHS = 1;
+        
+        // Fechas correctas de último riego
+        // Jade: 19 de enero 2026 (para que el próximo sea 2 feb, 16 feb, etc.)
+        // Sansevieria: 30 de enero 2026 (viernes de la semana pasada)
+        const CORRECT_LAST_JADE = new Date(2026, 0, 19); // 19 de enero 2026
+        const CORRECT_LAST_SANSEVIERIA = new Date(2026, 0, 30); // 30 de enero 2026
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let currentYear = today.getFullYear();
+        
+        const STORAGE_KEYS = {
+            jade: 'last-watered-jade',
+            sansevieria: 'last-watered-sansevieria'
+        };
+        
+        // Forzar las fechas correctas (sobrescribe localStorage incorrecto)
+        localStorage.setItem(STORAGE_KEYS.jade, '2026-01-19');
+        localStorage.setItem(STORAGE_KEYS.sansevieria, '2026-01-30');
+        
+        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const weekDays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+        // === Funciones de fecha ===
+        function isSameDay(date1, date2) {
+            return date1.getDate() === date2.getDate() && 
+                   date1.getMonth() === date2.getMonth() && 
+                   date1.getFullYear() === date2.getFullYear();
+        }
+
+        function formatDate(date) {
+            return `${date.getDate()} de ${monthNames[date.getMonth()]}`;
+        }
+
+        function formatDateWithYear(date) {
+            return `${date.getDate()} de ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        function daysUntil(date) {
+            return Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+        }
+
+        function toLocalISODate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function parseLocalDateString(value) {
+            const parts = value.split('-').map(Number);
+            if (parts.length !== 3) return null;
+            const [y, m, d] = parts;
+            if (!y || !m || !d) return null;
+            const date = new Date(y, m - 1, d);
+            date.setHours(0, 0, 0, 0);
+            return date;
+        }
+
+        // === Almacenamiento ===
+        function getLastWatered(type) {
+            const key = STORAGE_KEYS[type];
+            const raw = localStorage.getItem(key);
+            if (raw) {
+                const parsed = parseLocalDateString(raw);
+                if (parsed) return parsed;
+            }
+            // Valores por defecto
+            return type === 'jade' ? CORRECT_LAST_JADE : CORRECT_LAST_SANSEVIERIA;
+        }
+
+        function setLastWatered(type, date) {
+            const key = STORAGE_KEYS[type];
+            localStorage.setItem(key, toLocalISODate(date));
+        }
+
+        // === Cálculo del próximo riego ===
+        function getNextWatering(type) {
+            const lastWatered = getLastWatered(type);
+            let next = new Date(lastWatered);
+            
+            if (type === 'jade') {
+                next.setDate(next.getDate() + JADE_INTERVAL);
+            } else {
+                next.setMonth(next.getMonth() + SANSEVIERIA_INTERVAL_MONTHS);
+            }
+            
+            // Si ya pasó, avanzar hasta la próxima fecha válida
+            while (next < today) {
+                if (type === 'jade') {
+                    next.setDate(next.getDate() + JADE_INTERVAL);
+                } else {
+                    next.setMonth(next.getMonth() + SANSEVIERIA_INTERVAL_MONTHS);
+                }
+            }
+            
+            return next;
+        }
+
+        // === Generar fechas de riego para el calendario ===
+        // Muestra el último riego y todos los próximos
+        function getScheduleDates(type, startDate, endDate) {
+            const dates = [];
+            const lastWatered = getLastWatered(type);
+            
+            if (type === 'jade') {
+                // Jade: cada 14 días
+                let current = new Date(lastWatered);
+                while (current <= endDate) {
+                    if (current >= startDate) {
+                        dates.push(new Date(current));
+                    }
+                    current.setDate(current.getDate() + JADE_INTERVAL);
+                }
+            } else {
+                // Sansevieria: mensual, mismo día (o último día del mes si no existe)
+                const targetDay = lastWatered.getDate(); // día 30
+                let monthOffset = 0;
+                
+                while (true) {
+                    const year = lastWatered.getFullYear();
+                    const month = lastWatered.getMonth() + monthOffset;
+                    // Calcular último día del mes
+                    const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+                    // Usar día 30 o el último día si el mes es más corto
+                    const day = Math.min(targetDay, lastDayOfMonth);
+                    const current = new Date(year, month, day);
+                    
+                    if (current > endDate) break;
+                    if (current >= startDate) {
+                        dates.push(new Date(current));
+                    }
+                    monthOffset++;
+                }
+            }
+            return dates;
+        }
+
+        function generateMonthCalendar(year, month, jadeDates, sansevDates) {
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startWeekDay = (firstDay.getDay() + 6) % 7;
+            let html = `<div class="month-card" data-month="${month}"><div class="month-header">${monthNames[month]}</div><div class="month-body"><div class="weekdays">${weekDays.map(d => `<span>${d}</span>`).join('')}</div><div class="days">`;
+            for (let i = 0; i < startWeekDay; i++) html += '<div class="day empty"></div>';
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const currentDate = new Date(year, month, day);
+                const isJade = jadeDates.some(d => isSameDay(d, currentDate));
+                const isSansev = sansevDates.some(d => isSameDay(d, currentDate));
+                const isToday = isSameDay(currentDate, today);
+                const isPast = currentDate < today && !isToday;
+                let classes = ['day'];
+                let tooltip = '';
+                if (isJade && isSansev) { classes.push('water-both'); tooltip = '🪴 Jade + 🌿 Sansevieria'; }
+                else if (isJade) { classes.push('water-jade'); tooltip = '🪴 Regar Jade (100ml)'; }
+                else if (isSansev) { classes.push('water-sansevieria'); tooltip = '🌿 Regar Sansevieria (100ml)'; }
+                if (isToday) classes.push('today');
+                if (isPast) classes.push('past');
+                html += `<div class="${classes.join(' ')}" ${tooltip ? `data-tooltip="${tooltip}"` : ''} onmouseenter="showTooltip(event)" onmouseleave="hideTooltip()">${day}</div>`;
+            }
+            html += '</div></div></div>';
+            return html;
+        }
+
+        function showTooltip(event) {
+            const tooltip = document.getElementById('tooltip');
+            const text = event.target.dataset.tooltip;
+            if (text) {
+                tooltip.textContent = text;
+                tooltip.style.left = event.pageX + 10 + 'px';
+                tooltip.style.top = event.pageY - 30 + 'px';
+                tooltip.classList.add('show');
+            }
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').classList.remove('show');
+        }
+
+        function renderCalendar() {
+            const startDate = new Date(currentYear, 0, 1); // 1 de enero del año
+            const endDate = new Date(currentYear, 11, 31); // 31 de diciembre del año
+            const jadeDates = getScheduleDates('jade', startDate, endDate);
+            const sansevDates = getScheduleDates('sansevieria', startDate, endDate);
+            
+            // Renderizar calendario
+            const grid = document.getElementById('calendar-grid');
+            let html = '';
+            for (let month = 0; month < 12; month++) {
+                html += generateMonthCalendar(currentYear, month, jadeDates, sansevDates);
+            }
+            grid.innerHTML = html;
+            document.getElementById('year-display').textContent = currentYear;
+            
+            // Estadísticas del año
+            const jadeThisYear = jadeDates.filter(d => d.getFullYear() === currentYear).length;
+            const sansevThisYear = sansevDates.filter(d => d.getFullYear() === currentYear).length;
+            const totalWater = ((jadeThisYear + sansevThisYear) * 100) / 1000;
+            document.getElementById('total-jade').textContent = jadeThisYear;
+            document.getElementById('total-sansevieria').textContent = sansevThisYear;
+            document.getElementById('total-water').textContent = totalWater.toFixed(1);
+            
+            // Próximos riegos
+            const nextJade = getNextWatering('jade');
+            const nextSansev = getNextWatering('sansevieria');
+            
+            // Tarjetas de plantas
+            const daysJade = daysUntil(nextJade);
+            document.getElementById('next-jade').innerHTML = 
+                daysJade === 0 ? '💧 ¡Regar hoy!' : 
+                daysJade === 1 ? '💧 Regar mañana' : 
+                `💧 Próximo: ${formatDate(nextJade)} (${daysJade} días)`;
+            
+            const daysSansev = daysUntil(nextSansev);
+            document.getElementById('next-sansevieria').innerHTML = 
+                daysSansev === 0 ? '💧 ¡Regar hoy!' : 
+                daysSansev === 1 ? '💧 Regar mañana' : 
+                `💧 Próximo: ${formatDate(nextSansev)} (${daysSansev} días)`;
+
+            // Badge de hoy
+            document.getElementById('today-badge').textContent = `Hoy: ${formatDate(today)} ${today.getFullYear()}`;
+
+            // Mensaje principal: ¿Toca regar hoy?
+            const jadeToday = isSameDay(nextJade, today);
+            const sansevToday = isSameDay(nextSansev, today);
+            const todayMessage = document.getElementById('today-message');
+            
+            if (jadeToday && sansevToday) {
+                todayMessage.textContent = 'Sí. Jade y Sansevieria.';
+                todayMessage.classList.remove('no');
+            } else if (jadeToday) {
+                todayMessage.textContent = 'Sí. Solo Jade.';
+                todayMessage.classList.remove('no');
+            } else if (sansevToday) {
+                todayMessage.textContent = 'Sí. Solo Sansevieria.';
+                todayMessage.classList.remove('no');
+            } else {
+                todayMessage.textContent = 'No, hoy no toca.';
+                todayMessage.classList.add('no');
+            }
+
+            // Próximo riego general
+            const nextAll = nextJade < nextSansev ? nextJade : nextSansev;
+            const daysAll = daysUntil(nextAll);
+            document.getElementById('today-sub').textContent = 
+                `Próximo riego: ${formatDateWithYear(nextAll)} (${daysAll} días)`;
+
+            // Inputs de último riego
+            const lastJade = getLastWatered('jade');
+            const lastSansev = getLastWatered('sansevieria');
+            
+            document.getElementById('last-jade-input').value = toLocalISODate(lastJade);
+            document.getElementById('last-sansev-input').value = toLocalISODate(lastSansev);
+
+            // Scroll al mes actual
+            if (currentYear === today.getFullYear()) {
+                const monthCard = grid.querySelector(`.month-card[data-month="${today.getMonth()}"]`);
+                if (monthCard) {
+                    monthCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        }
+
+        function changeYear(delta) {
+            currentYear += delta;
+            if (currentYear < 2024) currentYear = 2024;
+            if (currentYear > 2030) currentYear = 2030;
+            renderCalendar();
+        }
+
+        // Input de fecha para Jade
+        document.getElementById('last-jade-input').addEventListener('change', (event) => {
+            const parsed = parseLocalDateString(event.target.value);
+            if (parsed) {
+                setLastWatered('jade', parsed);
+                renderCalendar();
+            }
+        });
+
+        // Input de fecha para Sansevieria
+        document.getElementById('last-sansev-input').addEventListener('change', (event) => {
+            const parsed = parseLocalDateString(event.target.value);
+            if (parsed) {
+                setLastWatered('sansevieria', parsed);
+                renderCalendar();
+            }
+        });
+
+        document.getElementById('today-badge').addEventListener('click', () => {
+            currentYear = today.getFullYear();
+            renderCalendar();
+        });
+
+        renderCalendar();
+    </script>
+</body>
+</html>
