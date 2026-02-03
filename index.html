@@ -628,35 +628,46 @@
             return date;
         }
 
-        // === Almacenamiento ===
-        // Cache local de las fechas (se sincroniza con API)
-        let wateringDates = {
-            jade: null,
-            sansevieria: null
+        // === Almacenamiento (Historial) ===
+        // Cache local del historial de riegos (arrays de fechas)
+        let wateringHistory = {
+            jade: [CORRECT_LAST_JADE],
+            sansevieria: [CORRECT_LAST_SANSEVIERIA]
         };
         
+        function getWateringHistory(type) {
+            return wateringHistory[type] || [];
+        }
+        
         function getLastWatered(type) {
-            if (wateringDates[type]) {
-                return wateringDates[type];
-            }
-            // Fallback a localStorage o valores por defecto
-            const key = STORAGE_KEYS[type];
-            const raw = localStorage.getItem(key);
-            if (raw) {
-                const parsed = parseLocalDateString(raw);
-                if (parsed) return parsed;
+            const history = getWateringHistory(type);
+            if (history.length > 0) {
+                return history[history.length - 1];
             }
             return type === 'jade' ? CORRECT_LAST_JADE : CORRECT_LAST_SANSEVIERIA;
         }
 
-        function setLastWatered(type, date) {
-            // Guardar en cache local
-            wateringDates[type] = date;
-            // Guardar en localStorage como backup
-            const key = STORAGE_KEYS[type];
-            localStorage.setItem(key, toLocalISODate(date));
-            // Guardar en API (no bloqueante)
+        function addWatering(type, date) {
+            const history = wateringHistory[type];
+            const dateStr = toLocalISODate(date);
+            // No agregar duplicados
+            if (!history.some(d => toLocalISODate(d) === dateStr)) {
+                history.push(date);
+                history.sort((a, b) => a - b);
+            }
+            // Guardar en API
             saveToAPI(type, date);
+        }
+        
+        function removeWatering(type, date) {
+            const history = wateringHistory[type];
+            const dateStr = toLocalISODate(date);
+            const index = history.findIndex(d => toLocalISODate(d) === dateStr);
+            if (index > -1) {
+                history.splice(index, 1);
+            }
+            // Eliminar en API
+            deleteFromAPI(type, date);
         }
         
         // === API ===
@@ -665,18 +676,17 @@
                 const response = await fetch('/api/riego');
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.jade) {
-                        wateringDates.jade = parseLocalDateString(data.jade);
-                        localStorage.setItem(STORAGE_KEYS.jade, data.jade);
+                    // La API ahora devuelve arrays de fechas
+                    if (data.jade && Array.isArray(data.jade)) {
+                        wateringHistory.jade = data.jade.map(parseLocalDateString).filter(Boolean);
                     }
-                    if (data.sansevieria) {
-                        wateringDates.sansevieria = parseLocalDateString(data.sansevieria);
-                        localStorage.setItem(STORAGE_KEYS.sansevieria, data.sansevieria);
+                    if (data.sansevieria && Array.isArray(data.sansevieria)) {
+                        wateringHistory.sansevieria = data.sansevieria.map(parseLocalDateString).filter(Boolean);
                     }
                     renderCalendar();
                 }
             } catch (error) {
-                console.log('API no disponible, usando localStorage');
+                console.log('API no disponible, usando datos locales');
             }
         }
         
@@ -689,6 +699,18 @@
                 });
             } catch (error) {
                 console.log('Error guardando en API:', error);
+            }
+        }
+        
+        async function deleteFromAPI(planta, fecha) {
+            try {
+                await fetch('/api/riego', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ planta, fecha: toLocalISODate(fecha) })
+                });
+            } catch (error) {
+                console.log('Error eliminando en API:', error);
             }
         }
 
@@ -716,41 +738,53 @@
         }
 
         // === Generar fechas de riego para el calendario ===
-        // Muestra el último riego y todos los próximos
+        // Combina: historial real de riegos + próximos calculados desde el último
         function getScheduleDates(type, startDate, endDate) {
             const dates = [];
+            const history = getWateringHistory(type);
             const lastWatered = getLastWatered(type);
             
+            // 1. Agregar todos los riegos reales del historial
+            for (const date of history) {
+                if (date >= startDate && date <= endDate) {
+                    dates.push(new Date(date));
+                }
+            }
+            
+            // 2. Calcular próximos riegos desde el último
             if (type === 'jade') {
-                // Jade: cada 14 días
                 let current = new Date(lastWatered);
+                current.setDate(current.getDate() + JADE_INTERVAL);
                 while (current <= endDate) {
-                    if (current >= startDate) {
+                    // Solo agregar si no está ya en el historial
+                    if (!history.some(d => isSameDay(d, current))) {
                         dates.push(new Date(current));
                     }
                     current.setDate(current.getDate() + JADE_INTERVAL);
                 }
             } else {
-                // Sansevieria: mensual, mismo día (o último día del mes si no existe)
-                const targetDay = lastWatered.getDate(); // día 30
-                let monthOffset = 0;
+                // Sansevieria: mensual
+                const targetDay = lastWatered.getDate();
+                let monthOffset = 1;
                 
                 while (true) {
                     const year = lastWatered.getFullYear();
                     const month = lastWatered.getMonth() + monthOffset;
-                    // Calcular último día del mes
                     const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-                    // Usar día 30 o el último día si el mes es más corto
                     const day = Math.min(targetDay, lastDayOfMonth);
                     const current = new Date(year, month, day);
                     
                     if (current > endDate) break;
-                    if (current >= startDate) {
+                    // Solo agregar si no está ya en el historial
+                    if (!history.some(d => isSameDay(d, current))) {
                         dates.push(new Date(current));
                     }
                     monthOffset++;
                 }
             }
+            
+            // Ordenar por fecha
+            dates.sort((a, b) => a - b);
             return dates;
         }
 
@@ -900,7 +934,7 @@
         const toastUndo = document.getElementById('toast-undo');
         
         let pendingPlant = null;
-        let previousDate = null;
+        let addedDate = null; // La fecha que se agregó (para poder deshacer)
         let toastTimeout = null;
         
         const plantNames = {
@@ -915,7 +949,6 @@
         
         function showModal(plant) {
             pendingPlant = plant;
-            previousDate = getLastWatered(plant);
             modalIcon.textContent = plantIcons[plant];
             modalTitle.textContent = `¿Regaste la ${plantNames[plant]} hoy?`;
             modalOverlay.classList.add('show');
@@ -940,13 +973,13 @@
         
         function hideToast() {
             toast.classList.remove('show');
-            previousDate = null;
+            addedDate = null;
             pendingPlant = null;
         }
         
         function undoWatering() {
-            if (pendingPlant && previousDate) {
-                setLastWatered(pendingPlant, previousDate);
+            if (pendingPlant && addedDate) {
+                removeWatering(pendingPlant, addedDate);
                 renderCalendar();
                 hideToast();
             }
@@ -960,7 +993,8 @@
         
         modalConfirm.addEventListener('click', () => {
             if (pendingPlant) {
-                setLastWatered(pendingPlant, today);
+                addedDate = new Date(today); // Guardar la fecha agregada
+                addWatering(pendingPlant, today);
                 renderCalendar();
                 hideModal();
                 showToast();
