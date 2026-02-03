@@ -1,0 +1,4 @@
+name = "mis-plantitas"
+compatibility_date = "2024-01-01"
+
+# KV namespace se configurará después de crearlo

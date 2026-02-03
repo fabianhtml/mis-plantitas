@@ -133,19 +133,40 @@
             background: linear-gradient(135deg, var(--sansevieria), var(--sansevieria-light));
             color: white;
         }
-        .last-water-row {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 0.8rem 0;
-            font-size: 0.9rem;
-        }
-        .last-water-row label {
+        .last-water-info {
+            font-size: 0.85rem;
             color: var(--earth-light);
+            margin: 0.5rem 0;
         }
-        .last-water-row .date-input {
-            flex: 1;
-            max-width: 160px;
+        .water-btn {
+            display: block;
+            width: 100%;
+            padding: 0.7rem 1rem;
+            margin-top: 0.8rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .plant-card.jade .water-btn {
+            background: var(--cream);
+            color: var(--jade);
+            border: 2px solid var(--jade);
+        }
+        .plant-card.jade .water-btn:hover {
+            background: var(--jade);
+            color: white;
+        }
+        .plant-card.sansevieria .water-btn {
+            background: var(--cream);
+            color: var(--sansevieria);
+            border: 2px solid var(--sansevieria);
+        }
+        .plant-card.sansevieria .water-btn:hover {
+            background: var(--sansevieria);
+            color: white;
         }
         .stats {
             display: grid;
@@ -192,17 +213,6 @@
         .today-sub {
             font-size: 0.9rem;
             color: var(--earth-light);
-        }
-        .date-input {
-            padding: 0.55rem 0.7rem;
-            border-radius: 10px;
-            border: 1px solid rgba(61, 41, 20, 0.12);
-            font-size: 0.9rem;
-            background: white;
-        }
-        .date-input:focus-visible {
-            outline: 2px solid rgba(45, 90, 69, 0.35);
-            outline-offset: 2px;
         }
         .calendar-header {
             display: flex;
@@ -341,6 +351,119 @@
             white-space: nowrap;
         }
         .tooltip.show { opacity: 1; }
+        
+        /* Modal de confirmación */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.2s ease;
+        }
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+        .modal-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .modal-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: var(--earth);
+            margin-bottom: 1.5rem;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 0.8rem;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .modal-btn.cancel {
+            background: var(--cream);
+            border: 2px solid var(--earth-light);
+            color: var(--earth-light);
+        }
+        .modal-btn.cancel:hover {
+            background: var(--earth-light);
+            color: white;
+        }
+        .modal-btn.confirm {
+            background: var(--jade);
+            border: 2px solid var(--jade);
+            color: white;
+        }
+        .modal-btn.confirm:hover {
+            background: var(--jade-light);
+            border-color: var(--jade-light);
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--earth);
+            color: white;
+            padding: 0.8rem 1.2rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast-text {
+            font-weight: 500;
+        }
+        .toast-undo {
+            background: transparent;
+            border: 1px solid white;
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .toast-undo:hover {
+            background: white;
+            color: var(--earth);
+        }
         @media (min-width: 700px) {
             .container { padding: 1.5rem; }
             header { padding: 2rem 0; }
@@ -353,6 +476,25 @@
 </head>
 <body>
     <div class="tooltip" id="tooltip"></div>
+    
+    <!-- Modal de confirmación -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <div class="modal-icon" id="modal-icon">🪴</div>
+            <div class="modal-title" id="modal-title">¿Regaste la Jade hoy?</div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" id="modal-cancel">Cancelar</button>
+                <button class="modal-btn confirm" id="modal-confirm">Sí, regué</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast de confirmación con deshacer -->
+    <div class="toast" id="toast">
+        <span class="toast-text">Guardado</span>
+        <button class="toast-undo" id="toast-undo">Deshacer</button>
+    </div>
+    
     <div class="container">
         <header>
             <h1><span>🌱</span> Mis Plantitas</h1>
@@ -375,11 +517,9 @@
                 <div class="water-info">
                     <p>💧 <strong>100 ml</strong> cada <strong>2 semanas</strong></p>
                 </div>
-                <div class="last-water-row">
-                    <label for="last-jade-input">Último riego:</label>
-                    <input class="date-input" id="last-jade-input" type="date">
-                </div>
+                <div class="last-water-info" id="last-jade-info">Último riego: cargando...</div>
                 <div class="next-water" id="next-jade">Cargando...</div>
+                <button class="water-btn" data-plant="jade">Regué hoy</button>
             </div>
             <div class="plant-card sansevieria">
                 <span class="plant-icon">🌿</span>
@@ -388,11 +528,9 @@
                 <div class="water-info">
                     <p>💧 <strong>100 ml</strong> cada <strong>mes</strong></p>
                 </div>
-                <div class="last-water-row">
-                    <label for="last-sansev-input">Último riego:</label>
-                    <input class="date-input" id="last-sansev-input" type="date">
-                </div>
+                <div class="last-water-info" id="last-sansev-info">Último riego: cargando...</div>
                 <div class="next-water" id="next-sansevieria">Cargando...</div>
+                <button class="water-btn" data-plant="sansevieria">Regué hoy</button>
             </div>
         </div>
         <div class="stats">
@@ -451,10 +589,6 @@
             sansevieria: 'last-watered-sansevieria'
         };
         
-        // Forzar las fechas correctas (sobrescribe localStorage incorrecto)
-        localStorage.setItem(STORAGE_KEYS.jade, '2026-01-19');
-        localStorage.setItem(STORAGE_KEYS.sansevieria, '2026-01-30');
-        
         const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
         const weekDays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
@@ -495,20 +629,67 @@
         }
 
         // === Almacenamiento ===
+        // Cache local de las fechas (se sincroniza con API)
+        let wateringDates = {
+            jade: null,
+            sansevieria: null
+        };
+        
         function getLastWatered(type) {
+            if (wateringDates[type]) {
+                return wateringDates[type];
+            }
+            // Fallback a localStorage o valores por defecto
             const key = STORAGE_KEYS[type];
             const raw = localStorage.getItem(key);
             if (raw) {
                 const parsed = parseLocalDateString(raw);
                 if (parsed) return parsed;
             }
-            // Valores por defecto
             return type === 'jade' ? CORRECT_LAST_JADE : CORRECT_LAST_SANSEVIERIA;
         }
 
         function setLastWatered(type, date) {
+            // Guardar en cache local
+            wateringDates[type] = date;
+            // Guardar en localStorage como backup
             const key = STORAGE_KEYS[type];
             localStorage.setItem(key, toLocalISODate(date));
+            // Guardar en API (no bloqueante)
+            saveToAPI(type, date);
+        }
+        
+        // === API ===
+        async function loadFromAPI() {
+            try {
+                const response = await fetch('/api/riego');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.jade) {
+                        wateringDates.jade = parseLocalDateString(data.jade);
+                        localStorage.setItem(STORAGE_KEYS.jade, data.jade);
+                    }
+                    if (data.sansevieria) {
+                        wateringDates.sansevieria = parseLocalDateString(data.sansevieria);
+                        localStorage.setItem(STORAGE_KEYS.sansevieria, data.sansevieria);
+                    }
+                    renderCalendar();
+                }
+            } catch (error) {
+                console.log('API no disponible, usando localStorage');
+            }
+        }
+        
+        async function saveToAPI(planta, fecha) {
+            try {
+                await fetch('/api/riego', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ planta, fecha: toLocalISODate(fecha) })
+                });
+            } catch (error) {
+                console.log('Error guardando en API:', error);
+            }
         }
 
         // === Cálculo del próximo riego ===
@@ -681,12 +862,12 @@
             document.getElementById('today-sub').textContent = 
                 `Próximo riego: ${formatDateWithYear(nextAll)} (${daysAll} días)`;
 
-            // Inputs de último riego
+            // Info de último riego
             const lastJade = getLastWatered('jade');
             const lastSansev = getLastWatered('sansevieria');
             
-            document.getElementById('last-jade-input').value = toLocalISODate(lastJade);
-            document.getElementById('last-sansev-input').value = toLocalISODate(lastSansev);
+            document.getElementById('last-jade-info').textContent = `Último riego: ${formatDate(lastJade)}`;
+            document.getElementById('last-sansev-info').textContent = `Último riego: ${formatDate(lastSansev)}`;
 
             // Scroll al mes actual
             if (currentYear === today.getFullYear()) {
@@ -704,30 +885,102 @@
             renderCalendar();
         }
 
-        // Input de fecha para Jade
-        document.getElementById('last-jade-input').addEventListener('change', (event) => {
-            const parsed = parseLocalDateString(event.target.value);
-            if (parsed) {
-                setLastWatered('jade', parsed);
-                renderCalendar();
-            }
-        });
-
-        // Input de fecha para Sansevieria
-        document.getElementById('last-sansev-input').addEventListener('change', (event) => {
-            const parsed = parseLocalDateString(event.target.value);
-            if (parsed) {
-                setLastWatered('sansevieria', parsed);
-                renderCalendar();
-            }
-        });
-
         document.getElementById('today-badge').addEventListener('click', () => {
             currentYear = today.getFullYear();
             renderCalendar();
         });
 
+        // === Modal y Toast ===
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalIcon = document.getElementById('modal-icon');
+        const modalTitle = document.getElementById('modal-title');
+        const modalCancel = document.getElementById('modal-cancel');
+        const modalConfirm = document.getElementById('modal-confirm');
+        const toast = document.getElementById('toast');
+        const toastUndo = document.getElementById('toast-undo');
+        
+        let pendingPlant = null;
+        let previousDate = null;
+        let toastTimeout = null;
+        
+        const plantNames = {
+            jade: 'Jade',
+            sansevieria: 'Sansevieria'
+        };
+        
+        const plantIcons = {
+            jade: '🪴',
+            sansevieria: '🌿'
+        };
+        
+        function showModal(plant) {
+            pendingPlant = plant;
+            previousDate = getLastWatered(plant);
+            modalIcon.textContent = plantIcons[plant];
+            modalTitle.textContent = `¿Regaste la ${plantNames[plant]} hoy?`;
+            modalOverlay.classList.add('show');
+        }
+        
+        function hideModal() {
+            modalOverlay.classList.remove('show');
+            pendingPlant = null;
+        }
+        
+        function showToast() {
+            // Cancelar timeout anterior si existe
+            if (toastTimeout) {
+                clearTimeout(toastTimeout);
+            }
+            toast.classList.add('show');
+            // Auto-ocultar después de 5 segundos
+            toastTimeout = setTimeout(() => {
+                hideToast();
+            }, 5000);
+        }
+        
+        function hideToast() {
+            toast.classList.remove('show');
+            previousDate = null;
+            pendingPlant = null;
+        }
+        
+        function undoWatering() {
+            if (pendingPlant && previousDate) {
+                setLastWatered(pendingPlant, previousDate);
+                renderCalendar();
+                hideToast();
+            }
+        }
+        
+        // Event listeners
+        modalCancel.addEventListener('click', hideModal);
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) hideModal();
+        });
+        
+        modalConfirm.addEventListener('click', () => {
+            if (pendingPlant) {
+                setLastWatered(pendingPlant, today);
+                renderCalendar();
+                hideModal();
+                showToast();
+            }
+        });
+        
+        toastUndo.addEventListener('click', undoWatering);
+        
+        // Botones "Regué hoy"
+        document.querySelectorAll('.water-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const plant = btn.dataset.plant;
+                showModal(plant);
+            });
+        });
+
+        // Inicializar
         renderCalendar();
+        // Cargar datos desde API (si está disponible)
+        loadFromAPI();
     </script>
 </body>
 </html>
