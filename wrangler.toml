@@ -1,4 +1,7 @@
 name = "mis-plantitas"
 compatibility_date = "2024-01-01"
+pages_build_output_dir = "."
 
-# KV namespace se configurará después de crearlo
+[[kv_namespaces]]
+binding = "PLANTITAS_KV"
+id = "2e739b24de1a4226afc313c69b4c2886"
