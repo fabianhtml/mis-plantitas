@@ -327,6 +327,25 @@
         .day.water-jade { background: var(--jade); color: white; font-weight: 600; }
         .day.water-sansevieria { background: var(--sansevieria); color: white; font-weight: 600; }
         .day.water-both { background: linear-gradient(135deg, var(--jade) 50%, var(--sansevieria) 50%); color: white; font-weight: 600; }
+        .day.water-jade-done {
+            background: white;
+            color: var(--jade);
+            border: 2px solid var(--jade);
+            font-weight: 600;
+        }
+        .day.water-sansevieria-done {
+            background: white;
+            color: var(--sansevieria);
+            border: 2px solid var(--sansevieria);
+            font-weight: 600;
+        }
+        .day.water-both-done {
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, var(--jade) 50%, var(--sansevieria) 50%) border-box;
+            border: 2px solid transparent;
+            color: var(--earth);
+            font-weight: 600;
+        }
         .day.today { box-shadow: 0 0 0 3px #E74C3C, 0 6px 12px rgba(231, 76, 60, 0.25); }
         .day.past { opacity: 0.4; }
         .day:not(.empty):hover { box-shadow: 0 0 0 2px rgba(45, 90, 69, 0.25); z-index: 10; }
@@ -740,14 +759,15 @@
         // === Generar fechas de riego para el calendario ===
         // Combina: historial real de riegos + próximos calculados desde el último
         function getScheduleDates(type, startDate, endDate) {
-            const dates = [];
+            const doneDates = [];
+            const upcomingDates = [];
             const history = getWateringHistory(type);
             const lastWatered = getLastWatered(type);
             
             // 1. Agregar todos los riegos reales del historial
             for (const date of history) {
                 if (date >= startDate && date <= endDate) {
-                    dates.push(new Date(date));
+                    doneDates.push(new Date(date));
                 }
             }
             
@@ -758,7 +778,7 @@
                 while (current <= endDate) {
                     // Solo agregar si no está ya en el historial
                     if (!history.some(d => isSameDay(d, current))) {
-                        dates.push(new Date(current));
+                        upcomingDates.push(new Date(current));
                     }
                     current.setDate(current.getDate() + JADE_INTERVAL);
                 }
@@ -777,18 +797,17 @@
                     if (current > endDate) break;
                     // Solo agregar si no está ya en el historial
                     if (!history.some(d => isSameDay(d, current))) {
-                        dates.push(new Date(current));
+                        upcomingDates.push(new Date(current));
                     }
                     monthOffset++;
                 }
             }
-            
-            // Ordenar por fecha
-            dates.sort((a, b) => a - b);
-            return dates;
+            doneDates.sort((a, b) => a - b);
+            upcomingDates.sort((a, b) => a - b);
+            return { doneDates, upcomingDates };
         }
 
-        function generateMonthCalendar(year, month, jadeDates, sansevDates) {
+        function generateMonthCalendar(year, month, jadeDone, jadeUpcoming, sansevDone, sansevUpcoming) {
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
             const startWeekDay = (firstDay.getDay() + 6) % 7;
@@ -796,15 +815,20 @@
             for (let i = 0; i < startWeekDay; i++) html += '<div class="day empty"></div>';
             for (let day = 1; day <= lastDay.getDate(); day++) {
                 const currentDate = new Date(year, month, day);
-                const isJade = jadeDates.some(d => isSameDay(d, currentDate));
-                const isSansev = sansevDates.some(d => isSameDay(d, currentDate));
+                const isJadeDone = jadeDone.some(d => isSameDay(d, currentDate));
+                const isSansevDone = sansevDone.some(d => isSameDay(d, currentDate));
+                const isJadeUpcoming = jadeUpcoming.some(d => isSameDay(d, currentDate));
+                const isSansevUpcoming = sansevUpcoming.some(d => isSameDay(d, currentDate));
                 const isToday = isSameDay(currentDate, today);
                 const isPast = currentDate < today && !isToday;
                 let classes = ['day'];
                 let tooltip = '';
-                if (isJade && isSansev) { classes.push('water-both'); tooltip = '🪴 Jade + 🌿 Sansevieria'; }
-                else if (isJade) { classes.push('water-jade'); tooltip = '🪴 Regar Jade (100ml)'; }
-                else if (isSansev) { classes.push('water-sansevieria'); tooltip = '🌿 Regar Sansevieria (100ml)'; }
+                if (isJadeDone && isSansevDone) { classes.push('water-both-done'); tooltip = '✅ Regado: Jade + Sansevieria'; }
+                else if (isJadeUpcoming && isSansevUpcoming) { classes.push('water-both'); tooltip = '🪴 Jade + 🌿 Sansevieria'; }
+                else if (isJadeDone) { classes.push('water-jade-done'); tooltip = '✅ Regado: Jade'; }
+                else if (isSansevDone) { classes.push('water-sansevieria-done'); tooltip = '✅ Regado: Sansevieria'; }
+                else if (isJadeUpcoming) { classes.push('water-jade'); tooltip = '🪴 Regar Jade (100ml)'; }
+                else if (isSansevUpcoming) { classes.push('water-sansevieria'); tooltip = '🌿 Regar Sansevieria (100ml)'; }
                 if (isToday) classes.push('today');
                 if (isPast) classes.push('past');
                 html += `<div class="${classes.join(' ')}" ${tooltip ? `data-tooltip="${tooltip}"` : ''} onmouseenter="showTooltip(event)" onmouseleave="hideTooltip()">${day}</div>`;
@@ -838,14 +862,21 @@
             const grid = document.getElementById('calendar-grid');
             let html = '';
             for (let month = 0; month < 12; month++) {
-                html += generateMonthCalendar(currentYear, month, jadeDates, sansevDates);
+                html += generateMonthCalendar(
+                    currentYear,
+                    month,
+                    jadeDates.doneDates,
+                    jadeDates.upcomingDates,
+                    sansevDates.doneDates,
+                    sansevDates.upcomingDates
+                );
             }
             grid.innerHTML = html;
             document.getElementById('year-display').textContent = currentYear;
             
             // Estadísticas del año
-            const jadeThisYear = jadeDates.filter(d => d.getFullYear() === currentYear).length;
-            const sansevThisYear = sansevDates.filter(d => d.getFullYear() === currentYear).length;
+            const jadeThisYear = jadeDates.doneDates.length + jadeDates.upcomingDates.length;
+            const sansevThisYear = sansevDates.doneDates.length + sansevDates.upcomingDates.length;
             const totalWater = ((jadeThisYear + sansevThisYear) * 100) / 1000;
             document.getElementById('total-jade').textContent = jadeThisYear;
             document.getElementById('total-sansevieria').textContent = sansevThisYear;
