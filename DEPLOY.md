@@ -69,3 +69,4 @@ Cloudflare cachea agresivamente. Prueba con Ctrl+Shift+R o espera unos minutos.
 
 ### Deploy falla
 Revisa los logs en el dashboard: **Workers & Pages** > **mis-plantitas** > **Deployments** > click en el deploy fallido.
+
