@@ -923,7 +923,7 @@
         
         function hideModal() {
             modalOverlay.classList.remove('show');
-            pendingPlant = null;
+            // NO resetear pendingPlant aquí, se necesita para el undo
         }
         
         function showToast() {
