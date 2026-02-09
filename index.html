@@ -334,6 +334,7 @@
         .day {
             aspect-ratio: 1;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             font-size: 0.8rem;
@@ -342,6 +343,7 @@
             transition: all 0.2s ease;
             cursor: default;
         }
+        .day.empty { flex-direction: row; }
         .day.empty { visibility: hidden; }
         .day.water-jade { background: var(--jade); color: white; font-weight: 600; }
         .day.water-sansevieria { background: var(--sansevieria); color: white; font-weight: 600; }
@@ -365,6 +367,32 @@
             color: var(--earth);
             font-weight: 600;
         }
+        .day.water-canelo { background: var(--canelo); color: white; font-weight: 600; }
+        .day.water-canelo-done {
+            background: white;
+            color: var(--canelo);
+            border: 2px solid var(--canelo);
+            font-weight: 600;
+        }
+        .day-dots {
+            display: flex;
+            gap: 2px;
+            margin-top: 1px;
+            pointer-events: none;
+        }
+        .day-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .day-dot.jade.upcoming { background: var(--jade); }
+        .day-dot.jade.done { background: transparent; border: 1px solid var(--jade); }
+        .day-dot.sansevieria.upcoming { background: var(--sansevieria); }
+        .day-dot.sansevieria.done { background: transparent; border: 1px solid var(--sansevieria); }
+        .day-dot.canelo.upcoming { background: var(--canelo); }
+        .day-dot.canelo.done { background: transparent; border: 1px solid var(--canelo); }
+        .day-dot.none { opacity: 0.2; background: var(--earth-light); }
         .day.today { box-shadow: 0 0 0 3px #E74C3C, 0 6px 12px rgba(231, 76, 60, 0.25); }
         .day.past { opacity: 0.4; }
         .day:not(.empty):hover { box-shadow: 0 0 0 2px rgba(45, 90, 69, 0.25); z-index: 10; }
@@ -865,7 +893,7 @@
             return { doneDates, upcomingDates };
         }
 
-        function generateMonthCalendar(year, month, jadeDone, jadeUpcoming, sansevDone, sansevUpcoming) {
+        function generateMonthCalendar(year, month, jadeDone, jadeUpcoming, sansevDone, sansevUpcoming, caneloDone, caneloUpcoming) {
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
             const startWeekDay = (firstDay.getDay() + 6) % 7;
@@ -875,21 +903,31 @@
                 const currentDate = new Date(year, month, day);
                 const isJadeDone = jadeDone.some(d => isSameDay(d, currentDate));
                 const isSansevDone = sansevDone.some(d => isSameDay(d, currentDate));
+                const isCaneloDone = caneloDone && caneloDone.some(d => isSameDay(d, currentDate));
                 const isJadeUpcoming = jadeUpcoming.some(d => isSameDay(d, currentDate));
                 const isSansevUpcoming = sansevUpcoming.some(d => isSameDay(d, currentDate));
+                const isCaneloUpcoming = caneloUpcoming && caneloUpcoming.some(d => isSameDay(d, currentDate));
                 const isToday = isSameDay(currentDate, today);
                 const isPast = currentDate < today && !isToday;
                 let classes = ['day'];
-                let tooltip = '';
-                if (isJadeDone && isSansevDone) { classes.push('water-both-done'); tooltip = '✅ Regado: Jade + Sansevieria'; }
-                else if (isJadeUpcoming && isSansevUpcoming) { classes.push('water-both'); tooltip = '🪴 Jade + 🌿 Sansevieria'; }
-                else if (isJadeDone) { classes.push('water-jade-done'); tooltip = '✅ Regado: Jade'; }
-                else if (isSansevDone) { classes.push('water-sansevieria-done'); tooltip = '✅ Regado: Sansevieria'; }
-                else if (isJadeUpcoming) { classes.push('water-jade'); tooltip = '🪴 Regar Jade (100ml)'; }
-                else if (isSansevUpcoming) { classes.push('water-sansevieria'); tooltip = '🌿 Regar Sansevieria (100ml)'; }
+                const tooltipParts = [];
+                if (isJadeDone && isSansevDone) { classes.push('water-both-done'); tooltipParts.push('✅ Jade', '✅ Sansevieria'); }
+                else if (isJadeUpcoming && isSansevUpcoming) { classes.push('water-both'); tooltipParts.push('🪴 Jade', '🌿 Sansevieria'); }
+                else if (isJadeDone) { classes.push('water-jade-done'); tooltipParts.push('✅ Jade'); }
+                else if (isSansevDone) { classes.push('water-sansevieria-done'); tooltipParts.push('✅ Sansevieria'); }
+                else if (isJadeUpcoming) { classes.push('water-jade'); tooltipParts.push('🪴 Regar Jade (100ml)'); }
+                else if (isSansevUpcoming) { classes.push('water-sansevieria'); tooltipParts.push('🌿 Regar Sansevieria (100ml)'); }
+                if (isCaneloDone) { if (!classes.some(c => c.startsWith('water-'))) classes.push('water-canelo-done'); tooltipParts.push('✅ Canelo'); }
+                else if (isCaneloUpcoming) { if (!classes.some(c => c.startsWith('water-'))) classes.push('water-canelo'); tooltipParts.push('🌲 Regar Canelo (50-80ml)'); }
                 if (isToday) classes.push('today');
                 if (isPast) classes.push('past');
-                html += `<div class="${classes.join(' ')}" ${tooltip ? `data-tooltip="${tooltip}"` : ''} onmouseenter="showTooltip(event)" onmouseleave="hideTooltip()">${day}</div>`;
+                const tooltip = tooltipParts.length ? tooltipParts.join(' · ') : '';
+                const jadeState = isJadeDone ? 'done' : (isJadeUpcoming ? 'upcoming' : 'none');
+                const sansevState = isSansevDone ? 'done' : (isSansevUpcoming ? 'upcoming' : 'none');
+                const caneloState = isCaneloDone ? 'done' : (isCaneloUpcoming ? 'upcoming' : 'none');
+                const hasAnyPlant = jadeState !== 'none' || sansevState !== 'none' || caneloState !== 'none';
+                const dotsHtml = hasAnyPlant ? `<div class="day-dots"><span class="day-dot jade ${jadeState}"></span><span class="day-dot sansevieria ${sansevState}"></span><span class="day-dot canelo ${caneloState}"></span></div>` : '';
+                html += `<div class="${classes.join(' ')}" ${tooltip ? `data-tooltip="${tooltip.replace(/"/g, '&quot;')}"` : ''} onmouseenter="showTooltip(event)" onmouseleave="hideTooltip()">${day}${dotsHtml}</div>`;
             }
             html += '</div></div></div>';
             return html;
@@ -931,7 +969,9 @@
                     jadeDates.doneDates,
                     jadeDates.upcomingDates,
                     sansevDates.doneDates,
-                    sansevDates.upcomingDates
+                    sansevDates.upcomingDates,
+                    caneloDates.doneDates,
+                    caneloDates.upcomingDates
                 );
             }
             grid.innerHTML = html;
