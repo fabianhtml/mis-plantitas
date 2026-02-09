@@ -5,13 +5,15 @@
 
 const KEYS = {
     jade: 'waterings-jade',
-    sansevieria: 'waterings-sansevieria'
+    sansevieria: 'waterings-sansevieria',
+    canelo: 'waterings-canel'
 };
 
 // Historial inicial por defecto
 const DEFAULTS = {
     jade: ['2026-01-19'],
-    sansevieria: ['2026-01-30']
+    sansevieria: ['2026-01-30'],
+    canelo: []
 };
 
 async function getHistory(env, planta) {
@@ -36,8 +38,9 @@ export async function onRequestGet(context) {
     try {
         const jade = await getHistory(env, 'jade');
         const sansevieria = await getHistory(env, 'sansevieria');
+        const canelo = await getHistory(env, 'canelo');
         
-        return new Response(JSON.stringify({ jade, sansevieria }), {
+        return new Response(JSON.stringify({ jade, sansevieria, canelo }), {
             headers: { 'Content-Type': 'application/json' }
         });
     } catch (error) {

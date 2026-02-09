@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Plantitas - Calendario de Riego</title>
-    <meta name="description" content="Calendario de riego para mis plantitas. Jade y Sansevieria.">
+    <meta name="description" content="Calendario de riego para mis plantitas. Jade, Sansevieria y Canelo.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
@@ -13,6 +13,8 @@
             --jade-light: #4A7C59;
             --sansevieria: #8B6914;
             --sansevieria-light: #C4A052;
+            --canelo: #1B5E3F;
+            --canelo-light: #2E7D5A;
             --cream: #FDF8F0;
             --earth: #3D2914;
             --earth-light: #5C4033;
@@ -75,6 +77,7 @@
         }
         .plant-card:nth-child(1) { animation-delay: 0.2s; }
         .plant-card:nth-child(2) { animation-delay: 0.4s; }
+        .plant-card:nth-child(3) { animation-delay: 0.6s; }
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(40px); }
             to { opacity: 1; transform: translateY(0); }
@@ -88,6 +91,7 @@
         }
         .plant-card.jade::before { background: linear-gradient(90deg, var(--jade), var(--jade-light)); }
         .plant-card.sansevieria::before { background: linear-gradient(90deg, var(--sansevieria), var(--sansevieria-light)); }
+        .plant-card.canelo::before { background: linear-gradient(90deg, var(--canelo), var(--canelo-light)); }
         .plant-icon { font-size: 3rem; margin-bottom: 0.8rem; display: block; }
         .plant-name {
             font-family: 'Playfair Display', serif;
@@ -97,6 +101,7 @@
         }
         .plant-card.jade .plant-name { color: var(--jade); }
         .plant-card.sansevieria .plant-name { color: var(--sansevieria); }
+        .plant-card.canelo .plant-name { color: var(--canelo); }
         .plant-scientific {
             font-style: italic;
             color: var(--earth-light);
@@ -133,6 +138,10 @@
             background: linear-gradient(135deg, var(--sansevieria), var(--sansevieria-light));
             color: white;
         }
+        .plant-card.canelo .next-water {
+            background: linear-gradient(135deg, var(--canelo), var(--canelo-light));
+            color: white;
+        }
         .last-water-info {
             font-size: 0.85rem;
             color: var(--earth-light);
@@ -166,6 +175,15 @@
         }
         .plant-card.sansevieria .water-btn:hover {
             background: var(--sansevieria);
+            color: white;
+        }
+        .plant-card.canelo .water-btn {
+            background: var(--cream);
+            color: var(--canelo);
+            border: 2px solid var(--canelo);
+        }
+        .plant-card.canelo .water-btn:hover {
+            background: var(--canelo);
             color: white;
         }
         .stats {
@@ -276,6 +294,7 @@
         .legend-dot { width: 14px; height: 14px; border-radius: 50%; }
         .legend-dot.jade { background: var(--jade); }
         .legend-dot.sansevieria { background: var(--sansevieria); }
+        .legend-dot.canelo { background: var(--canelo); }
         .legend-dot.both { background: linear-gradient(135deg, var(--jade) 50%, var(--sansevieria) 50%); }
         .legend-dot.today { background: #E74C3C; }
         .calendar-grid {
@@ -370,6 +389,9 @@
             white-space: nowrap;
         }
         .tooltip.show { opacity: 1; }
+        .tooltip.wrap { white-space: normal; max-width: 260px; }
+        .water-note-trigger { cursor: help; font-size: 0.85em; opacity: 0.85; margin-left: 0.2rem; }
+        .water-note-trigger:hover { opacity: 1; }
         
         /* Modal de confirmación */
         .modal-overlay {
@@ -551,6 +573,17 @@
                 <div class="next-water" id="next-sansevieria">Cargando...</div>
                 <button class="water-btn" data-plant="sansevieria">Regué hoy</button>
             </div>
+            <div class="plant-card canelo">
+                <span class="plant-icon">🌲</span>
+                <h2 class="plant-name">Canelo</h2>
+                <p class="plant-scientific">Drimys winteri</p>
+                <div class="water-info">
+                    <p>💧 <strong>50–80 ml</strong> cada <strong>semana</strong> <span class="water-note-trigger" data-tooltip="Suelo húmedo sin encharcar. En vasito pequeño seca rápido." onmouseenter="showTooltip(event)" onmouseleave="hideTooltip()" role="img" aria-label="Nota">ℹ️</span></p>
+                </div>
+                <div class="last-water-info" id="last-canelo-info">Último riego: cargando...</div>
+                <div class="next-water" id="next-canelo">Cargando...</div>
+                <button class="water-btn" data-plant="canelo">Regué hoy</button>
+            </div>
         </div>
         <div class="stats">
             <div class="stat-card">
@@ -560,6 +593,10 @@
             <div class="stat-card">
                 <div class="stat-number" id="total-sansevieria">0</div>
                 <div class="stat-label">Riegos Sansevieria</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-canelo">0</div>
+                <div class="stat-label">Riegos Canelo</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="total-water">0</div>
@@ -579,7 +616,8 @@
             <div class="legend">
                 <div class="legend-item"><div class="legend-dot jade"></div><span>Jade</span></div>
                 <div class="legend-item"><div class="legend-dot sansevieria"></div><span>Sansevieria</span></div>
-                <div class="legend-item"><div class="legend-dot both"></div><span>Ambas</span></div>
+                <div class="legend-item"><div class="legend-dot canelo"></div><span>Canelo</span></div>
+                <div class="legend-item"><div class="legend-dot both"></div><span>Jade + Sansevieria</span></div>
                 <div class="legend-item"><div class="legend-dot today"></div><span>Hoy</span></div>
             </div>
             <div class="calendar-grid" id="calendar-grid"></div>
@@ -590,14 +628,15 @@
         // Configuración simple: fechas de último riego conocidas
         // Jade: cada 2 semanas (14 días)
         // Sansevieria: 1 vez al mes
+        // Canelo: cada semana (suelo húmedo, maceta chica)
         const JADE_INTERVAL = 14;
         const SANSEVIERIA_INTERVAL_MONTHS = 1;
+        const CANELO_INTERVAL = 7;
         
-        // Fechas correctas de último riego
-        // Jade: 19 de enero 2026 (para que el próximo sea 2 feb, 16 feb, etc.)
-        // Sansevieria: 30 de enero 2026 (viernes de la semana pasada)
+        // Fechas correctas de último riego (cuando no hay historial en API)
         const CORRECT_LAST_JADE = new Date(2026, 0, 19); // 19 de enero 2026
         const CORRECT_LAST_SANSEVIERIA = new Date(2026, 0, 30); // 30 de enero 2026
+        const CORRECT_LAST_CANELO = new Date(2026, 1, 2); // 2 feb 2026 → próximo 9 feb
         
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -605,7 +644,8 @@
         
         const STORAGE_KEYS = {
             jade: 'last-watered-jade',
-            sansevieria: 'last-watered-sansevieria'
+            sansevieria: 'last-watered-sansevieria',
+            canelo: 'last-watered-canel'
         };
         
         const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -651,7 +691,8 @@
         // Cache local del historial de riegos (arrays de fechas)
         let wateringHistory = {
             jade: [CORRECT_LAST_JADE],
-            sansevieria: [CORRECT_LAST_SANSEVIERIA]
+            sansevieria: [CORRECT_LAST_SANSEVIERIA],
+            canelo: []
         };
         
         function getWateringHistory(type) {
@@ -663,7 +704,9 @@
             if (history.length > 0) {
                 return history[history.length - 1];
             }
-            return type === 'jade' ? CORRECT_LAST_JADE : CORRECT_LAST_SANSEVIERIA;
+            if (type === 'jade') return CORRECT_LAST_JADE;
+            if (type === 'sansevieria') return CORRECT_LAST_SANSEVIERIA;
+            return CORRECT_LAST_CANELO;
         }
 
         function addWatering(type, date) {
@@ -701,6 +744,9 @@
                     }
                     if (data.sansevieria && Array.isArray(data.sansevieria)) {
                         wateringHistory.sansevieria = data.sansevieria.map(parseLocalDateString).filter(Boolean);
+                    }
+                    if (data.canelo && Array.isArray(data.canelo)) {
+                        wateringHistory.canelo = data.canelo.map(parseLocalDateString).filter(Boolean);
                     }
                     renderCalendar();
                 }
@@ -740,6 +786,8 @@
             
             if (type === 'jade') {
                 next.setDate(next.getDate() + JADE_INTERVAL);
+            } else if (type === 'canelo') {
+                next.setDate(next.getDate() + CANELO_INTERVAL);
             } else {
                 next.setMonth(next.getMonth() + SANSEVIERIA_INTERVAL_MONTHS);
             }
@@ -748,6 +796,8 @@
             while (next < today) {
                 if (type === 'jade') {
                     next.setDate(next.getDate() + JADE_INTERVAL);
+                } else if (type === 'canelo') {
+                    next.setDate(next.getDate() + CANELO_INTERVAL);
                 } else {
                     next.setMonth(next.getMonth() + SANSEVIERIA_INTERVAL_MONTHS);
                 }
@@ -776,11 +826,19 @@
                 let current = new Date(lastWatered);
                 current.setDate(current.getDate() + JADE_INTERVAL);
                 while (current <= endDate) {
-                    // Solo agregar si no está ya en el historial
                     if (!history.some(d => isSameDay(d, current))) {
                         upcomingDates.push(new Date(current));
                     }
                     current.setDate(current.getDate() + JADE_INTERVAL);
+                }
+            } else if (type === 'canelo') {
+                let current = new Date(lastWatered);
+                current.setDate(current.getDate() + CANELO_INTERVAL);
+                while (current <= endDate) {
+                    if (!history.some(d => isSameDay(d, current))) {
+                        upcomingDates.push(new Date(current));
+                    }
+                    current.setDate(current.getDate() + CANELO_INTERVAL);
                 }
             } else {
                 // Sansevieria: mensual
@@ -845,11 +903,15 @@
                 tooltip.style.left = event.pageX + 10 + 'px';
                 tooltip.style.top = event.pageY - 30 + 'px';
                 tooltip.classList.add('show');
+                if (event.target.classList.contains('water-note-trigger')) {
+                    tooltip.classList.add('wrap');
+                }
             }
         }
 
         function hideTooltip() {
-            document.getElementById('tooltip').classList.remove('show');
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show', 'wrap');
         }
 
         function renderCalendar() {
@@ -857,6 +919,7 @@
             const endDate = new Date(currentYear, 11, 31); // 31 de diciembre del año
             const jadeDates = getScheduleDates('jade', startDate, endDate);
             const sansevDates = getScheduleDates('sansevieria', startDate, endDate);
+            const caneloDates = getScheduleDates('canelo', startDate, endDate);
             
             // Renderizar calendario
             const grid = document.getElementById('calendar-grid');
@@ -877,14 +940,17 @@
             // Estadísticas del año
             const jadeThisYear = jadeDates.doneDates.length + jadeDates.upcomingDates.length;
             const sansevThisYear = sansevDates.doneDates.length + sansevDates.upcomingDates.length;
-            const totalWater = ((jadeThisYear + sansevThisYear) * 100) / 1000;
+            const caneloThisYear = caneloDates.doneDates.length + caneloDates.upcomingDates.length;
+            const totalWater = ((jadeThisYear + sansevThisYear) * 100 + caneloThisYear * 80) / 1000;
             document.getElementById('total-jade').textContent = jadeThisYear;
             document.getElementById('total-sansevieria').textContent = sansevThisYear;
+            document.getElementById('total-canelo').textContent = caneloThisYear;
             document.getElementById('total-water').textContent = totalWater.toFixed(1);
             
             // Próximos riegos
             const nextJade = getNextWatering('jade');
             const nextSansev = getNextWatering('sansevieria');
+            const nextCanelo = getNextWatering('canelo');
             
             // Tarjetas de plantas
             const daysJade = daysUntil(nextJade);
@@ -898,6 +964,12 @@
                 daysSansev === 0 ? '💧 ¡Regar hoy!' : 
                 daysSansev === 1 ? '💧 Regar mañana' : 
                 `💧 Próximo: ${formatDate(nextSansev)} (${daysSansev} días)`;
+            
+            const daysCanelo = daysUntil(nextCanelo);
+            document.getElementById('next-canelo').innerHTML = 
+                daysCanelo === 0 ? '💧 ¡Regar hoy!' : 
+                daysCanelo === 1 ? '💧 Regar mañana' : 
+                `💧 Próximo: ${formatDate(nextCanelo)} (${daysCanelo} días)`;
 
             // Badge de hoy
             document.getElementById('today-badge').textContent = `Hoy: ${formatDate(today)} ${today.getFullYear()}`;
@@ -905,24 +977,23 @@
             // Mensaje principal: ¿Toca regar hoy?
             const jadeToday = isSameDay(nextJade, today);
             const sansevToday = isSameDay(nextSansev, today);
+            const caneloToday = isSameDay(nextCanelo, today);
             const todayMessage = document.getElementById('today-message');
             
-            if (jadeToday && sansevToday) {
-                todayMessage.textContent = 'Sí. Jade y Sansevieria.';
-                todayMessage.classList.remove('no');
-            } else if (jadeToday) {
-                todayMessage.textContent = 'Sí. Solo Jade.';
-                todayMessage.classList.remove('no');
-            } else if (sansevToday) {
-                todayMessage.textContent = 'Sí. Solo Sansevieria.';
+            const toWater = [];
+            if (jadeToday) toWater.push('Jade');
+            if (sansevToday) toWater.push('Sansevieria');
+            if (caneloToday) toWater.push('Canelo');
+            if (toWater.length > 0) {
+                todayMessage.textContent = 'Sí. ' + toWater.join(' y ') + '.';
                 todayMessage.classList.remove('no');
             } else {
                 todayMessage.textContent = 'No, hoy no toca.';
                 todayMessage.classList.add('no');
             }
 
-            // Próximo riego general
-            const nextAll = nextJade < nextSansev ? nextJade : nextSansev;
+            // Próximo riego general (el más cercano de los tres)
+            const nextAll = [nextJade, nextSansev, nextCanelo].reduce((a, b) => a < b ? a : b);
             const daysAll = daysUntil(nextAll);
             document.getElementById('today-sub').textContent = 
                 `Próximo riego: ${formatDateWithYear(nextAll)} (${daysAll} días)`;
@@ -931,8 +1002,10 @@
             const lastJade = getLastWatered('jade');
             const lastSansev = getLastWatered('sansevieria');
             
+            const lastCanelo = getLastWatered('canelo');
             document.getElementById('last-jade-info').textContent = `Último riego: ${formatDate(lastJade)}`;
             document.getElementById('last-sansev-info').textContent = `Último riego: ${formatDate(lastSansev)}`;
+            document.getElementById('last-canelo-info').textContent = `Último riego: ${formatDate(lastCanelo)}`;
 
             // Scroll al mes actual
             if (currentYear === today.getFullYear()) {
@@ -970,12 +1043,14 @@
         
         const plantNames = {
             jade: 'Jade',
-            sansevieria: 'Sansevieria'
+            sansevieria: 'Sansevieria',
+            canelo: 'Canelo'
         };
         
         const plantIcons = {
             jade: '🪴',
-            sansevieria: '🌿'
+            sansevieria: '🌿',
+            canelo: '🌲'
         };
         
         function showModal(plant) {
